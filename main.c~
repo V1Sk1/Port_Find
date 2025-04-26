@@ -1,0 +1,57 @@
+#include <gtk/gtk.h>
+
+typedef struct {
+    GtkWidget *label;
+    gboolean is_on;
+} AppData;
+
+static void update_label(AppData *app_data) {
+    if (app_data->is_on) {
+        gtk_label_set_text(GTK_LABEL(app_data->label), "Вкл. ✅"); // Включено (зеленая галочка)
+    } else {
+        gtk_label_set_text(GTK_LABEL(app_data->label), "Выкл. ❌"); // Выключено (красный крестик)
+    }
+}
+
+static void button_clicked_callback(GtkWidget *widget, gpointer data) {
+    AppData *app_data = (AppData*)data;
+    app_data->is_on = !app_data->is_on;
+    update_label(app_data);
+}
+
+static void app_activate (GApplication *app, gpointer user_data) {
+    GtkWidget *window = gtk_application_window_new (GTK_APPLICATION (app));
+    gtk_window_set_title (GTK_WINDOW (window), "Unicode Checkbox");
+    gtk_window_set_default_size (GTK_WINDOW (window), 250, 100);
+
+    AppData *app_data = g_new0(AppData, 1);
+    app_data->is_on = FALSE;
+
+    // Create GtkLabel
+    GtkWidget *label = gtk_label_new(NULL); // Начальный текст будет установлен функцией update_label
+    app_data->label = label;
+    update_label(app_data); // Set initial label text
+
+    // Create button
+    GtkWidget *button = gtk_button_new_with_label ("Toggle");
+    g_signal_connect (button, "clicked", G_CALLBACK (button_clicked_callback), app_data);
+
+    // Pack widgets
+    GtkWidget *vbox = gtk_box_new (GTK_ORIENTATION_VERTICAL, 5);
+    gtk_box_append (GTK_BOX (vbox), label);
+    gtk_box_append (GTK_BOX (vbox), button);
+
+    gtk_window_set_child (GTK_WINDOW (window), vbox);
+
+    gtk_window_present (GTK_WINDOW (window));
+}
+
+int main (int argc, char **argv) {
+    GtkApplication *app = gtk_application_new ("com.example.unicodecheckbox", G_APPLICATION_DEFAULT_FLAGS);
+    g_signal_connect (app, "activate", G_CALLBACK (app_activate), NULL);
+
+    int status = g_application_run (G_APPLICATION (app), argc, argv);
+    g_object_unref (app);
+
+    return status;
+}
